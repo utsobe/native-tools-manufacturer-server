@@ -82,11 +82,21 @@ async function run() {
             res.send({ result, token });
         })
 
+        // make user admin 
+        app.put('/user/admin/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            const filter = { email: email };
+            const updateDoc = {
+                $set: { role: 'admin' },
+            };
+            const result = await userCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        });
+
         // save user other data 
         app.put('/user', async (req, res) => {
             const email = req.query.email;
             const data = req.body;
-            console.log(data);
             const filter = { email: email };
             const options = { upsert: true };
             const updateDoc = {
@@ -96,11 +106,18 @@ async function run() {
             res.send(result);
         });
 
-        app.get('/user', verifyJWT, async (req, res) => {
-            const email = req.query.email;
+        // get user details
+        app.get('/user/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
             const query = { email: email };
             const result = await userCollection.findOne(query);
             res.send(result);
+        });
+
+        // get user
+        app.get('/user', verifyJWT, async (req, res) => {
+            const users = await userCollection.find().toArray();
+            res.send(users);
         });
 
         // post order
