@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
@@ -19,6 +20,7 @@ async function run() {
         await client.connect();
         const toolCollection = client.db('native_tools').collection('tools');
         const orderCollection = client.db('native_tools').collection('orders');
+        const userCollection = client.db('native_tools').collection('users');
 
         // get all tools 
         app.get('/tool', async (req, res) => {
@@ -34,6 +36,19 @@ async function run() {
             const tool = await toolCollection.findOne(query);
             res.send(tool);
         });
+
+        // save new user to database
+        app.put('/user/:email', async (req, res) => {
+            const email = req.params.email;
+            const user = req.body;
+            const filter = { email: email };
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: user,
+            }
+            const result = await userCollection.updateOne(filter, updateDoc, options);
+            res.send(result);
+        })
 
         // post order
         app.post('/order', async (req, res) => {
