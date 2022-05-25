@@ -37,9 +37,10 @@ async function run() {
         const toolCollection = client.db('native_tools').collection('tools');
         const orderCollection = client.db('native_tools').collection('orders');
         const userCollection = client.db('native_tools').collection('users');
+        const paymentCollection = client.db('native_tools').collection('payments');
 
         // stripe
-        app.post('/create-payment-intent', async (req, res) => {
+        app.post('/create-payment-intent', verifyJWT, async (req, res) => {
             const order = req.body;
             const price = order.orderValue;
             const amount = price * 100;
@@ -99,6 +100,22 @@ async function run() {
             else {
                 return res.status(403).send({ message: 'Forbidden access' });
             }
+        });
+
+        // update payment data
+        app.patch('/order/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const payment = req.body;
+            const filter = { _id: ObjectId(id) };
+            const updateDoc = {
+                $set: {
+                    paid: true,
+                    transactionId: payment.transactionId,
+                }
+            };
+            const result = await paymentCollection.insertOne(payment);
+            const updatedOrder = await orderCollection.updateOne(filter, updateDoc);
+            res.send(updatedOrder);
         });
 
         // get a single order details
