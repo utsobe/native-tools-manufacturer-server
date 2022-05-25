@@ -38,6 +38,7 @@ async function run() {
         const orderCollection = client.db('native_tools').collection('orders');
         const userCollection = client.db('native_tools').collection('users');
         const paymentCollection = client.db('native_tools').collection('payments');
+        const reviewCollection = client.db('native_tools').collection('reviews');
 
         // stripe
         app.post('/create-payment-intent', verifyJWT, async (req, res) => {
@@ -134,6 +135,13 @@ async function run() {
             const result = await orderCollection.deleteOne(filter);
             res.send(result);
         });
+
+        // post a review
+        app.post('/review', async (req, res) => {
+            const review = req.body;
+            const result = await reviewCollection.insertOne(review);
+            res.send(result);
+        })
     }
     finally {
 
