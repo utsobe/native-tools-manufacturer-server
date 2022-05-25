@@ -82,6 +82,19 @@ async function run() {
             res.send({ result, token });
         })
 
+        // save user other data 
+        app.put('/user', async (req, res) => {
+            const email = req.query.email;
+            const data = req.body;
+            const filter = { email: email };
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: data,
+            };
+            const result = await userCollection.updateOne(filter, updateDoc, options);
+            res.send(result);
+        })
+
         // post order
         app.post('/order', async (req, res) => {
             const order = req.body;
