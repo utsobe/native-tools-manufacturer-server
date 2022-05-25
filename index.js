@@ -19,6 +19,12 @@ async function run() {
         await client.connect();
         const toolCollection = client.db('native_tools').collection('tools');
 
+        app.get('/tool', async (req, res) => {
+            console.log('database connected');
+            const query = {};
+            const tools = await toolCollection.find(query).toArray();
+            res.send(tools);
+        })
     }
     finally {
 
