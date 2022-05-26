@@ -208,6 +208,31 @@ async function run() {
             res.send(result);
         });
 
+        // get all order details
+        app.get('/all-order', verifyJWT, verifyAdmin, async (req, res) => {
+            const orders = await orderCollection.find().toArray();
+            res.send(orders);
+        });
+
+        // update order Status
+        app.patch('/all-order/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const updateDoc = {
+                $set: { status: 'approved' }
+            };
+            const result = await orderCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        });
+
+        //delete order by id
+        app.delete('/all-order/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await orderCollection.deleteOne(query);
+            res.send(result);
+        })
+
         // post a review
         app.post('/review', async (req, res) => {
             const review = req.body;
