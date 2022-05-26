@@ -40,6 +40,18 @@ async function run() {
         const paymentCollection = client.db('native_tools').collection('payments');
         const reviewCollection = client.db('native_tools').collection('reviews');
 
+        // verify admin
+        const verifyAdmin = async (req, res, next) => {
+            const requester = req.decoded.email;
+            const requesterAccount = await userCollection.findOne({ email: requester });
+            if (requesterAccount.role === 'admin') {
+                next();
+            }
+            else {
+                res.status(403).send({ message: 'forbidden' });
+            }
+        }
+
         // stripe
         app.post('/create-payment-intent', verifyJWT, async (req, res) => {
             const order = req.body;
@@ -68,6 +80,13 @@ async function run() {
             res.send(tool);
         });
 
+        // post tool
+        app.post('/tool', verifyJWT, verifyAdmin, async (req, res) => {
+            const tool = req.body;
+            const result = await toolCollection.insertOne(tool);
+            res.send(result);
+        });
+
         // save new user to database
         app.put('/user/:email', async (req, res) => {
             const email = req.params.email;
@@ -80,31 +99,24 @@ async function run() {
             const result = await userCollection.updateOne(filter, updateDoc, options);
             const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1d' });
             res.send({ result, token });
-        })
+        });
 
         app.get('/admin/:email', async (req, res) => {
             const email = req.params.email;
             const user = await userCollection.findOne({ email: email });
             const isAdmin = user.role === 'admin';
             res.send({ admin: isAdmin });
-        })
+        });
 
         // make user admin 
-        app.put('/user/admin/:email', verifyJWT, async (req, res) => {
+        app.put('/user/admin/:email', verifyJWT, verifyAdmin, async (req, res) => {
             const email = req.params.email;
-            const requester = req.decoded.email;
-            const requesterAccount = await userCollection.findOne({ email: requester });
-            if (requesterAccount.role === 'admin') {
-                const filter = { email: email };
-                const updateDoc = {
-                    $set: { role: 'admin' },
-                };
-                const result = await userCollection.updateOne(filter, updateDoc);
-                res.send(result);
-            }
-            else {
-                res.status(403).send({ message: 'forbidden' });
-            }
+            const filter = { email: email };
+            const updateDoc = {
+                $set: { role: 'admin' },
+            };
+            const result = await userCollection.updateOne(filter, updateDoc);
+            res.send(result);
         });
 
         // save user other data 
